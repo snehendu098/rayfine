@@ -1,22 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
 import { generatePrivateKey } from "viem/accounts";
-import { useWallet } from "../../hooks/useWallet";
+import { useWallet, hashPassword } from "../../hooks/useWallet";
 
 interface GenerateWalletProps {
   onSuccess: () => void;
 }
 
 export function GenerateWallet({ onSuccess }: GenerateWalletProps) {
-  const { savePrivateKey } = useWallet();
+  const { savePrivateKey, savePasswordHash } = useWallet();
   const { pop } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | undefined>();
 
   const handleGenerateWallet = async () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    setPasswordError(undefined);
+
     try {
       setIsLoading(true);
       const privateKey = generatePrivateKey();
+      const hash = hashPassword(password);
       await savePrivateKey(privateKey);
+      await savePasswordHash(hash);
       await showToast({ style: Toast.Style.Success, title: "Wallet created successfully!" });
       onSuccess();
       pop();
@@ -28,20 +39,32 @@ export function GenerateWallet({ onSuccess }: GenerateWalletProps) {
     }
   };
 
-  useEffect(() => {
-    handleGenerateWallet();
-  }, []);
-
   return (
     <Form
       isLoading={isLoading}
       actions={
         <ActionPanel>
+          <Action title="Generate Wallet" icon={Icon.Wand} onAction={handleGenerateWallet} />
           <Action title="Back" icon={Icon.ChevronLeft} onAction={pop} />
         </ActionPanel>
       }
     >
-      <Form.Description text="Generating new wallet..." />
+      <Form.Description text="Set a password to protect your private key" />
+      <Form.PasswordField
+        id="password"
+        title="Password"
+        placeholder="Enter password"
+        value={password}
+        onChange={setPassword}
+      />
+      <Form.PasswordField
+        id="confirmPassword"
+        title="Confirm Password"
+        placeholder="Confirm password"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+        error={passwordError}
+      />
     </Form>
   );
 }

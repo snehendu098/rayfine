@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
-import { useWallet } from "../../hooks/useWallet";
+import { useWallet, hashPassword } from "../../hooks/useWallet";
 
 interface ImportWalletProps {
   onSuccess: () => void;
 }
 
 export function ImportWallet({ onSuccess }: ImportWalletProps) {
-  const { savePrivateKey } = useWallet();
+  const { savePrivateKey, savePasswordHash } = useWallet();
   const { pop } = useNavigation();
   const [privateKey, setPrivateKey] = useState("");
   const [privateKeyError, setPrivateKeyError] = useState<string>();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
   const validatePrivateKey = (pk: string) => {
@@ -33,9 +36,17 @@ export function ImportWallet({ onSuccess }: ImportWalletProps) {
   const handleImportWallet = async () => {
     if (!validatePrivateKey(privateKey)) return;
 
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    setPasswordError(undefined);
+
     try {
       setIsLoading(true);
+      const hash = hashPassword(password);
       await savePrivateKey(privateKey);
+      await savePasswordHash(hash);
       await showToast({ style: Toast.Style.Success, title: "Wallet imported successfully!" });
       onSuccess();
       pop();
@@ -67,6 +78,23 @@ export function ImportWallet({ onSuccess }: ImportWalletProps) {
         error={privateKeyError}
       />
       <Form.Description text="Enter your private key in hex format (0x followed by 64 hex characters)" />
+      <Form.Separator />
+      <Form.Description text="Set a password to protect your private key" />
+      <Form.PasswordField
+        id="password"
+        title="Password"
+        placeholder="Enter password"
+        value={password}
+        onChange={setPassword}
+      />
+      <Form.PasswordField
+        id="confirmPassword"
+        title="Confirm Password"
+        placeholder="Confirm password"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+        error={passwordError}
+      />
     </Form>
   );
 }

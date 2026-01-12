@@ -24,11 +24,19 @@
       "subtitle": "Rayfine",
       "description": "Send funds to an address",
       "mode": "view"
+    },
+    {
+      "name": "openocean",
+      "title": "Swap on OpenOcean",
+      "subtitle": "Rayfine",
+      "description": "Swap via openocean",
+      "mode": "view"
     }
   ],
   "dependencies": {
     "@raycast/api": "^1.103.10",
     "@raycast/utils": "^1.17.0",
+    "mantle-agent-kit-sdk": "./agent.tgz",
     "viem": "^2.41.2"
   },
   "devDependencies": {

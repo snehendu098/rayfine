@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Form, ActionPanel, Action, showToast, Toast, Icon, Clipboard } from "@raycast/api";
+import { Form, ActionPanel, Action, showToast, Toast, Icon, Clipboard, useNavigation } from "@raycast/api";
 import { formatEther } from "viem";
 import { useWallet } from "../../hooks/useWallet";
+import { ViewPrivateKey } from "./ViewPrivateKey";
 
 interface WalletConnectedProps {
   onDisconnected: () => void;
@@ -9,6 +10,7 @@ interface WalletConnectedProps {
 
 export function WalletConnected({ onDisconnected }: WalletConnectedProps) {
   const { getAddress, clearWallet, network, publicClient } = useWallet();
+  const { push } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [balance, setBalance] = useState<string>("0");
   const [error, setError] = useState<string>();
@@ -65,6 +67,7 @@ export function WalletConnected({ onDisconnected }: WalletConnectedProps) {
       actions={
         <ActionPanel>
           <Action title="Copy Address" icon={Icon.CopyClipboard} onAction={handleCopyAddress} />
+          <Action title="View Private Key" icon={Icon.Key} onAction={() => push(<ViewPrivateKey />)} />
           <Action
             title="Disconnect Wallet"
             icon={Icon.XMarkCircle}

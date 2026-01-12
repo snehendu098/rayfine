@@ -1,29 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
 import { useWallet } from "./hooks/useWallet";
 import { sendAmount } from "./actions/mantle/send";
 import { TransactionReceiptView } from "./components/send/TransactionReceipt";
+import { createAgentKit } from "./utils/agentKit";
+import { getTokens, OpenOceanToken } from "./actions/kit/openocean";
 import { isAddress } from "viem";
 import { mantle, mantleSepoliaTestnet } from "viem/chains";
 
-interface Token {
-  name: string;
-  address: string;
-  decimals: number;
-  symbol: string;
-}
-
-const TOKENS: Token[] = [
-  { name: "Wrapped Mantle", address: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8", decimals: 18, symbol: "WMNT" },
-  { name: "USD Coin", address: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9", decimals: 6, symbol: "USDC" },
-  { name: "Tether USD", address: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE", decimals: 6, symbol: "USDT" },
-  { name: "Wrapped Ether", address: "0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111", decimals: 18, symbol: "WETH" },
-];
-
 export default function Send() {
-  const { account, network, saveNetwork, isLoading: walletLoading } = useWallet();
+  const { account, network, saveNetwork, privateKey, isLoading: walletLoading } = useWallet();
   const { push } = useNavigation();
 
+  const [tokens, setTokens] = useState<OpenOceanToken[]>([]);
+  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [selectedToken, setSelectedToken] = useState("native");
@@ -33,6 +23,30 @@ export default function Send() {
   const [amountError, setAmountError] = useState<string>();
   const [customTokenError, setCustomTokenError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+
+  const networkValue = network.id === 5000 ? "mainnet" : "testnet";
+
+  const agent = useMemo(() => {
+    if (!privateKey) return null;
+    return createAgentKit(privateKey, networkValue);
+  }, [privateKey, networkValue]);
+
+  const loadTokens = useCallback(async () => {
+    if (!agent) return;
+    try {
+      setIsLoadingTokens(true);
+      const tokenList = await getTokens(agent);
+      setTokens(tokenList);
+    } catch {
+      // keep empty tokens on error
+    } finally {
+      setIsLoadingTokens(false);
+    }
+  }, [agent]);
+
+  useEffect(() => {
+    loadTokens();
+  }, [loadTokens]);
 
   const validateRecipient = (addr: string) => {
     if (!addr.trim()) {
@@ -83,7 +97,7 @@ export default function Send() {
   const getTokenAddress = (): string | undefined => {
     if (selectedToken === "native") return undefined;
     if (selectedToken === "custom") return customTokenAddress;
-    const token = TOKENS.find((t) => t.address === selectedToken);
+    const token = tokens.find((t) => t.address === selectedToken);
     return token?.address;
   };
 
@@ -116,11 +130,9 @@ export default function Send() {
     }
   };
 
-  const networkValue = network.id === 5000 ? "mainnet" : "testnet";
-
   return (
     <Form
-      isLoading={walletLoading || isLoading}
+      isLoading={walletLoading || isLoading || isLoadingTokens}
       actions={
         <ActionPanel>
           <Action title="Send" icon={Icon.Airplane} onAction={handleSend} />
@@ -157,7 +169,7 @@ export default function Send() {
       <Form.Dropdown id="token" title="Token" value={selectedToken} onChange={setSelectedToken}>
         <Form.Dropdown.Item value="native" title="MNT (Native)" />
         <Form.Dropdown.Section title="Tokens">
-          {TOKENS.map((token) => (
+          {tokens.map((token) => (
             <Form.Dropdown.Item key={token.address} value={token.address} title={`${token.symbol} - ${token.name}`} />
           ))}
         </Form.Dropdown.Section>

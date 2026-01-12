@@ -1,0 +1,270 @@
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
+import { useWallet } from "./hooks/useWallet";
+import { createAgentKit } from "./utils/agentKit";
+import { getTokens, getQuote, executeSwap, getTokenBalance, OpenOceanToken } from "./actions/kit/openocean";
+import { SwapReceiptView } from "./components/swap/SwapReceipt";
+import { mantle, mantleSepoliaTestnet } from "viem/chains";
+import { Address } from "viem";
+
+const NATIVE_TOKEN: OpenOceanToken = {
+  symbol: "MNT",
+  name: "Mantle",
+  address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  decimals: 18,
+};
+
+export default function OpenOcean() {
+  const { account, network, saveNetwork, publicClient, privateKey, isLoading: walletLoading } = useWallet();
+  const { push } = useNavigation();
+
+  const [tokens, setTokens] = useState<OpenOceanToken[]>([NATIVE_TOKEN]);
+  const [fromToken, setFromToken] = useState(NATIVE_TOKEN.address);
+  const [toToken, setToToken] = useState("");
+  const [fromAmount, setFromAmount] = useState("");
+  const [toAmount, setToAmount] = useState("");
+  const [balance, setBalance] = useState({ formatted: "0", decimals: 18 });
+  const [slippage, setSlippage] = useState("1");
+  const [customSlippage, setCustomSlippage] = useState("");
+
+  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
+
+  const [amountError, setAmountError] = useState<string>();
+  const [slippageError, setSlippageError] = useState<string>();
+
+  const networkValue = network.id === 5000 ? "mainnet" : "testnet";
+
+  const agent = useMemo(() => {
+    if (!privateKey) return null;
+    return createAgentKit(privateKey, networkValue);
+  }, [privateKey, networkValue]);
+
+  const selectedFromToken = useMemo(
+    () => tokens.find((t) => t.address === fromToken) || NATIVE_TOKEN,
+    [tokens, fromToken],
+  );
+
+  const selectedToToken = useMemo(() => tokens.find((t) => t.address === toToken), [tokens, toToken]);
+
+  const handleNetworkChange = async (value: string) => {
+    const newNetwork = value === "mainnet" ? mantle : mantleSepoliaTestnet;
+    await saveNetwork(newNetwork);
+  };
+
+  const loadTokens = useCallback(async () => {
+    if (!agent) return;
+    try {
+      setIsLoadingTokens(true);
+      const tokenList = await getTokens(agent);
+      setTokens([NATIVE_TOKEN, ...tokenList]);
+    } catch (err) {
+      await showToast({ style: Toast.Style.Failure, title: "Failed to load tokens" });
+    } finally {
+      setIsLoadingTokens(false);
+    }
+  }, [agent]);
+
+  const loadBalance = useCallback(async () => {
+    if (!publicClient || !account) return;
+    try {
+      const tokenAddr = fromToken === NATIVE_TOKEN.address ? "native" : (fromToken as Address);
+      const bal = await getTokenBalance(publicClient, tokenAddr, account.address as Address);
+      setBalance({ formatted: bal.formatted, decimals: bal.decimals });
+    } catch (err) {
+      setBalance({ formatted: "0", decimals: 18 });
+    }
+  }, [publicClient, account, fromToken]);
+
+  const loadQuote = useCallback(async () => {
+    if (!agent || !fromToken || !toToken || !fromAmount) {
+      setToAmount("");
+      return;
+    }
+    const amt = parseFloat(fromAmount);
+    if (isNaN(amt) || amt <= 0) {
+      setToAmount("");
+      return;
+    }
+    try {
+      setIsLoadingQuote(true);
+      const quote = await getQuote(agent, fromToken as Address, toToken as Address, fromAmount);
+      const outHuman = (BigInt(quote.outAmount) / BigInt(10 ** quote.outToken.decimals)).toString();
+      setToAmount((Number(quote.outAmount) / 10 ** quote.outToken.decimals).toFixed(6));
+    } catch (err) {
+      setToAmount("");
+    } finally {
+      setIsLoadingQuote(false);
+    }
+  }, [agent, fromToken, toToken, fromAmount]);
+
+  useEffect(() => {
+    loadTokens();
+  }, [loadTokens]);
+
+  useEffect(() => {
+    loadBalance();
+  }, [loadBalance]);
+
+  useEffect(() => {
+    const timer = setTimeout(loadQuote, 500);
+    return () => clearTimeout(timer);
+  }, [loadQuote]);
+
+  const validateAmount = (val: string) => {
+    if (!val.trim()) {
+      setAmountError("Amount required");
+      return false;
+    }
+    const num = parseFloat(val);
+    if (isNaN(num) || num <= 0) {
+      setAmountError("Must be positive");
+      return false;
+    }
+    const bal = parseFloat(balance.formatted);
+    if (num > bal) {
+      setAmountError("Exceeds balance");
+      return false;
+    }
+    setAmountError(undefined);
+    return true;
+  };
+
+  const getSlippageValue = (): number => {
+    if (slippage === "custom") {
+      const val = parseFloat(customSlippage);
+      return isNaN(val) ? 1 : val;
+    }
+    return parseFloat(slippage);
+  };
+
+  const validateSlippage = () => {
+    if (slippage !== "custom") {
+      setSlippageError(undefined);
+      return true;
+    }
+    const val = parseFloat(customSlippage);
+    if (isNaN(val) || val <= 0 || val > 50) {
+      setSlippageError("0-50%");
+      return false;
+    }
+    setSlippageError(undefined);
+    return true;
+  };
+
+  const handleSwap = async () => {
+    if (!validateAmount(fromAmount) || !validateSlippage()) return;
+    if (!agent || !account) {
+      await showToast({ style: Toast.Style.Failure, title: "No wallet connected" });
+      return;
+    }
+    if (!toToken) {
+      await showToast({ style: Toast.Style.Failure, title: "Select output token" });
+      return;
+    }
+
+    try {
+      setIsSwapping(true);
+      await showToast({ style: Toast.Style.Animated, title: "Swapping..." });
+
+      const result = await executeSwap(
+        agent,
+        fromToken as Address,
+        toToken as Address,
+        fromAmount,
+        getSlippageValue(),
+      );
+
+      const explorerBase = network.id === 5000 ? "https://mantlescan.xyz" : "https://sepolia.mantlescan.xyz";
+
+      await showToast({ style: Toast.Style.Success, title: "Swap complete!" });
+      push(
+        <SwapReceiptView
+          txHash={result.txHash}
+          explorerUrl={`${explorerBase}/tx/${result.txHash}`}
+          fromSymbol={selectedFromToken.symbol}
+          toSymbol={selectedToToken?.symbol || ""}
+          fromAmount={fromAmount}
+          outAmount={result.outAmount}
+          outDecimals={result.outDecimals}
+        />,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Swap failed";
+      await showToast({ style: Toast.Style.Failure, title: "Error", message: msg });
+    } finally {
+      setIsSwapping(false);
+    }
+  };
+
+  const balanceDescription = `Balance: ${balance.formatted} ${selectedFromToken.symbol}`;
+
+  return (
+    <Form
+      isLoading={walletLoading || isLoadingTokens || isLoadingQuote || isSwapping}
+      actions={
+        <ActionPanel>
+          <Action title="Swap" icon={Icon.Switch} onAction={handleSwap} />
+        </ActionPanel>
+      }
+    >
+      <Form.Dropdown id="network" title="Network" value={networkValue} onChange={handleNetworkChange}>
+        <Form.Dropdown.Item value="testnet" title="Mantle Sepolia (Testnet)" />
+        <Form.Dropdown.Item value="mainnet" title="Mantle (Mainnet)" />
+      </Form.Dropdown>
+
+      <Form.Separator />
+
+      <Form.TextField
+        id="fromAmount"
+        title="From Amount"
+        placeholder="0.0"
+        value={fromAmount}
+        onChange={setFromAmount}
+        onBlur={() => validateAmount(fromAmount)}
+        error={amountError}
+      />
+
+      <Form.Dropdown id="fromToken" title="From Token" value={fromToken} onChange={setFromToken}>
+        {tokens.map((token) => (
+          <Form.Dropdown.Item key={token.address} value={token.address} title={`${token.symbol} - ${token.name}`} />
+        ))}
+      </Form.Dropdown>
+
+      <Form.Description text={balanceDescription} />
+
+      <Form.TextField id="toAmount" title="To Amount" placeholder="0.0" value={toAmount} onChange={() => {}} />
+
+      <Form.Dropdown id="toToken" title="To Token" value={toToken} onChange={setToToken}>
+        <Form.Dropdown.Item value="" title="Select token..." />
+        {tokens
+          .filter((t) => t.address !== fromToken)
+          .map((token) => (
+            <Form.Dropdown.Item key={token.address} value={token.address} title={`${token.symbol} - ${token.name}`} />
+          ))}
+      </Form.Dropdown>
+
+      <Form.Separator />
+
+      <Form.Dropdown id="slippage" title="Slippage" value={slippage} onChange={setSlippage}>
+        <Form.Dropdown.Item value="0.5" title="0.5%" />
+        <Form.Dropdown.Item value="1" title="1%" />
+        <Form.Dropdown.Item value="5" title="5%" />
+        <Form.Dropdown.Item value="custom" title="Custom" />
+      </Form.Dropdown>
+
+      {slippage === "custom" && (
+        <Form.TextField
+          id="customSlippage"
+          title="Custom Slippage %"
+          placeholder="1.0"
+          value={customSlippage}
+          onChange={setCustomSlippage}
+          onBlur={validateSlippage}
+          error={slippageError}
+        />
+      )}
+    </Form>
+  );
+}
