@@ -1,0 +1,1 @@
+export { TransactionReceiptView } from "./TransactionReceipt";
