@@ -31,12 +31,54 @@
       "subtitle": "Rayfine",
       "description": "Swap via openocean",
       "mode": "view"
+    },
+    {
+      "name": "merchantmoe",
+      "title": "Swap on Merchant Moe",
+      "subtitle": "Rayfine",
+      "description": "Swap via merchant moe dex aggregator",
+      "mode": "view"
+    },
+    {
+      "name": "lendle-supply",
+      "title": "Lendle Supply",
+      "subtitle": "Rayfine",
+      "description": "Supply assets to Lendle lending protocol",
+      "mode": "view"
+    },
+    {
+      "name": "lendle-withdraw",
+      "title": "Lendle Withdraw",
+      "subtitle": "Rayfine",
+      "description": "Withdraw assets from Lendle lending protocol",
+      "mode": "view"
+    },
+    {
+      "name": "lendle-borrow",
+      "title": "Lendle Borrow",
+      "subtitle": "Rayfine",
+      "description": "Borrow assets from Lendle lending protocol",
+      "mode": "view"
+    },
+    {
+      "name": "lendle-repay",
+      "title": "Lendle Repay",
+      "subtitle": "Rayfine",
+      "description": "Repay borrowed assets on Lendle",
+      "mode": "view"
+    },
+    {
+      "name": "lendle-positions",
+      "title": "Lendle Positions",
+      "subtitle": "Rayfine",
+      "description": "View Lendle positions and account health",
+      "mode": "view"
     }
   ],
   "dependencies": {
     "@raycast/api": "^1.103.10",
     "@raycast/utils": "^1.17.0",
-    "mantle-agent-kit-sdk": "./agent.tgz",
+    "mantle-agent-kit-sdk": "^1.2.0",
     "viem": "^2.41.2"
   },
   "devDependencies": {

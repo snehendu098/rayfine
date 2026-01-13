@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
-import { useWallet } from "./hooks/useWallet";
+import { WalletProvider, useWalletContext, RequireWallet } from "./context/WalletContext";
 import { sendAmount } from "./actions/mantle/send";
 import { TransactionReceiptView } from "./components/send/TransactionReceipt";
 import { createAgentKit } from "./utils/agentKit";
@@ -8,8 +8,8 @@ import { getTokens, OpenOceanToken } from "./actions/kit/openocean";
 import { isAddress } from "viem";
 import { mantle, mantleSepoliaTestnet } from "viem/chains";
 
-export default function Send() {
-  const { account, network, saveNetwork, privateKey, isLoading: walletLoading } = useWallet();
+function SendForm() {
+  const { account, network, saveNetwork, privateKey, isLoading: walletLoading } = useWalletContext();
   const { push } = useNavigation();
 
   const [tokens, setTokens] = useState<OpenOceanToken[]>([]);
@@ -188,5 +188,15 @@ export default function Send() {
         />
       )}
     </Form>
+  );
+}
+
+export default function Send() {
+  return (
+    <WalletProvider>
+      <RequireWallet>
+        <SendForm />
+      </RequireWallet>
+    </WalletProvider>
   );
 }

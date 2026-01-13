@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Form, ActionPanel, Action, showToast, Toast, Icon, useNavigation } from "@raycast/api";
 import { WalletProvider, useWalletContext, RequireWallet } from "./context/WalletContext";
 import { createAgentKit } from "./utils/agentKit";
-import { getTokens, getQuote, executeSwap, getTokenBalance, OpenOceanToken } from "./actions/kit/openocean";
+import { getTokens, getQuote, getTokenBalance, OpenOceanToken } from "./actions/kit/openocean";
+import { executeMerchantMoeSwap } from "./actions/kit/merchantmoe";
 import { SwapReceiptView } from "./components/swap/SwapReceipt";
-import { mantle, mantleSepoliaTestnet } from "viem/chains";
 import { Address } from "viem";
 
 const NATIVE_TOKEN: OpenOceanToken = {
@@ -14,8 +14,8 @@ const NATIVE_TOKEN: OpenOceanToken = {
   decimals: 18,
 };
 
-function OpenOceanSwapForm() {
-  const { account, network, saveNetwork, publicClient, privateKey, isLoading: walletLoading } = useWalletContext();
+function MerchantMoeSwapForm() {
+  const { account, publicClient, privateKey, isLoading: walletLoading } = useWalletContext();
   const { push } = useNavigation();
 
   const [tokens, setTokens] = useState<OpenOceanToken[]>([NATIVE_TOKEN]);
@@ -34,12 +34,10 @@ function OpenOceanSwapForm() {
   const [amountError, setAmountError] = useState<string>();
   const [slippageError, setSlippageError] = useState<string>();
 
-  const networkValue = network.id === 5000 ? "mainnet" : "testnet";
-
   const agent = useMemo(() => {
     if (!privateKey) return null;
-    return createAgentKit(privateKey, networkValue);
-  }, [privateKey, networkValue]);
+    return createAgentKit(privateKey, "mainnet");
+  }, [privateKey]);
 
   const selectedFromToken = useMemo(
     () => tokens.find((t) => t.address === fromToken) || NATIVE_TOKEN,
@@ -48,18 +46,13 @@ function OpenOceanSwapForm() {
 
   const selectedToToken = useMemo(() => tokens.find((t) => t.address === toToken), [tokens, toToken]);
 
-  const handleNetworkChange = async (value: string) => {
-    const newNetwork = value === "mainnet" ? mantle : mantleSepoliaTestnet;
-    await saveNetwork(newNetwork);
-  };
-
   const loadTokens = useCallback(async () => {
     if (!agent) return;
     try {
       setIsLoadingTokens(true);
       const tokenList = await getTokens(agent);
       setTokens([NATIVE_TOKEN, ...tokenList]);
-    } catch (err) {
+    } catch {
       await showToast({ style: Toast.Style.Failure, title: "Failed to load tokens" });
     } finally {
       setIsLoadingTokens(false);
@@ -72,7 +65,7 @@ function OpenOceanSwapForm() {
       const tokenAddr = fromToken === NATIVE_TOKEN.address ? "native" : (fromToken as Address);
       const bal = await getTokenBalance(publicClient, tokenAddr, account.address as Address);
       setBalance({ formatted: bal.formatted, decimals: bal.decimals });
-    } catch (err) {
+    } catch {
       setBalance({ formatted: "0", decimals: 18 });
     }
   }, [publicClient, account, fromToken]);
@@ -90,9 +83,8 @@ function OpenOceanSwapForm() {
     try {
       setIsLoadingQuote(true);
       const quote = await getQuote(agent, fromToken as Address, toToken as Address, fromAmount);
-      const outHuman = (BigInt(quote.outAmount) / BigInt(10 ** quote.outToken.decimals)).toString();
       setToAmount((Number(quote.outAmount) / 10 ** quote.outToken.decimals).toFixed(6));
-    } catch (err) {
+    } catch {
       setToAmount("");
     } finally {
       setIsLoadingQuote(false);
@@ -166,9 +158,9 @@ function OpenOceanSwapForm() {
 
     try {
       setIsSwapping(true);
-      await showToast({ style: Toast.Style.Animated, title: "Swapping..." });
+      await showToast({ style: Toast.Style.Animated, title: "Swapping on Merchant Moe..." });
 
-      const result = await executeSwap(
+      const result = await executeMerchantMoeSwap(
         agent,
         fromToken as Address,
         toToken as Address,
@@ -176,18 +168,16 @@ function OpenOceanSwapForm() {
         getSlippageValue(),
       );
 
-      const explorerBase = network.id === 5000 ? "https://mantlescan.xyz" : "https://sepolia.mantlescan.xyz";
-
       await showToast({ style: Toast.Style.Success, title: "Swap complete!" });
       push(
         <SwapReceiptView
           txHash={result.txHash}
-          explorerUrl={`${explorerBase}/tx/${result.txHash}`}
+          explorerUrl={`https://mantlescan.xyz/tx/${result.txHash}`}
           fromSymbol={selectedFromToken.symbol}
           toSymbol={selectedToToken?.symbol || ""}
           fromAmount={fromAmount}
-          outAmount={result.outAmount}
-          outDecimals={result.outDecimals}
+          outAmount={toAmount}
+          outDecimals={selectedToToken?.decimals || 18}
         />,
       );
     } catch (err) {
@@ -209,10 +199,7 @@ function OpenOceanSwapForm() {
         </ActionPanel>
       }
     >
-      <Form.Dropdown id="network" title="Network" value={networkValue} onChange={handleNetworkChange}>
-        <Form.Dropdown.Item value="testnet" title="Mantle Sepolia (Testnet)" />
-        <Form.Dropdown.Item value="mainnet" title="Mantle (Mainnet)" />
-      </Form.Dropdown>
+      <Form.Description title="Network" text="Mantle (Mainnet)" />
 
       <Form.Separator />
 
@@ -272,11 +259,11 @@ function OpenOceanSwapForm() {
   );
 }
 
-export default function OpenOcean() {
+export default function MerchantMoe() {
   return (
     <WalletProvider>
       <RequireWallet>
-        <OpenOceanSwapForm />
+        <MerchantMoeSwapForm />
       </RequireWallet>
     </WalletProvider>
   );
