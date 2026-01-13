@@ -10,7 +10,7 @@ import { Address } from "viem";
 const NATIVE_TOKEN: OpenOceanToken = {
   symbol: "MNT",
   name: "Mantle",
-  address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  address: "0x0000000000000000000000000000000000000000",
   decimals: 18,
 };
 
@@ -90,7 +90,6 @@ function OpenOceanSwapForm() {
     try {
       setIsLoadingQuote(true);
       const quote = await getQuote(agent, fromToken as Address, toToken as Address, fromAmount);
-      const outHuman = (BigInt(quote.outAmount) / BigInt(10 ** quote.outToken.decimals)).toString();
       setToAmount((Number(quote.outAmount) / 10 ** quote.outToken.decimals).toFixed(6));
     } catch (err) {
       setToAmount("");
@@ -187,7 +186,7 @@ function OpenOceanSwapForm() {
           toSymbol={selectedToToken?.symbol || ""}
           fromAmount={fromAmount}
           outAmount={result.outAmount}
-          outDecimals={result.outDecimals}
+          outDecimals={selectedToToken?.decimals || 18}
         />,
       );
     } catch (err) {

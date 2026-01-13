@@ -10,7 +10,7 @@ import { Address } from "viem";
 const NATIVE_TOKEN: OpenOceanToken = {
   symbol: "MNT",
   name: "Mantle",
-  address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  address: "0x000000000000000000000000000000000000",
   decimals: 18,
 };
 

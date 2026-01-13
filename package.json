@@ -73,6 +73,62 @@
       "subtitle": "Rayfine",
       "description": "View Lendle positions and account health",
       "mode": "view"
+    },
+    {
+      "name": "meth-position",
+      "title": "mETH Position",
+      "subtitle": "Rayfine",
+      "description": "View mETH balances and token addresses",
+      "mode": "view"
+    },
+    {
+      "name": "meth-swap-to",
+      "title": "Swap WETH to mETH",
+      "subtitle": "Rayfine",
+      "description": "Swap WETH to mETH via DEX",
+      "mode": "view"
+    },
+    {
+      "name": "meth-swap-from",
+      "title": "Swap mETH to WETH",
+      "subtitle": "Rayfine",
+      "description": "Swap mETH to WETH via DEX",
+      "mode": "view"
+    },
+    {
+      "name": "pyth-price",
+      "title": "Pyth Price",
+      "subtitle": "Rayfine",
+      "description": "Get token price from Pyth oracle",
+      "mode": "view"
+    },
+    {
+      "name": "token-balances",
+      "title": "Token Balances",
+      "subtitle": "Rayfine",
+      "description": "View wallet token balances",
+      "mode": "view"
+    },
+    {
+      "name": "sign-message",
+      "title": "Sign Message",
+      "subtitle": "Rayfine",
+      "description": "Sign an arbitrary message",
+      "mode": "view"
+    },
+    {
+      "name": "uniswap-swap",
+      "title": "Swap on Uniswap V3",
+      "subtitle": "Rayfine",
+      "description": "Swap tokens via Uniswap V3",
+      "mode": "view"
+    },
+    {
+      "name": "agni-swap",
+      "title": "Swap on Agni Finance",
+      "subtitle": "Rayfine",
+      "description": "Swap tokens via Agni Finance DEX",
+      "mode": "view"
     }
   ],
   "dependencies": {

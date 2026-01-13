@@ -26,14 +26,9 @@ export const useWallet = () => {
       setError(undefined);
 
       const storedPk = await LocalStorage.getItem<string>("privateKey");
-      const storedNetwork = await LocalStorage.getItem<string>("network");
       const storedPasswordHash = await LocalStorage.getItem<string>("passwordHash");
 
-      if (storedNetwork === "mainnet") {
-        setNetwork(mantle);
-      } else {
-        setNetwork(mantleSepoliaTestnet);
-      }
+      setNetwork(mantle);
 
       if (storedPasswordHash) {
         setPasswordHash(storedPasswordHash);
