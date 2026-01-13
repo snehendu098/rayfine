@@ -83,7 +83,7 @@
     },
     {
       "name": "meth-swap-to",
-      "title": "Swap WETH to mETH",
+      "title": "Stake WETH to mETH",
       "subtitle": "Rayfine",
       "description": "Swap WETH to mETH via DEX",
       "mode": "view"

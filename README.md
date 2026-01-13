@@ -5,26 +5,31 @@ Raycast extension for interacting with the Mantle blockchain directly from your 
 ## Features
 
 **Wallet**
+
 - Create/manage wallet
 - View token balances
 - Sign messages
 
 **DEX Swaps**
+
 - OpenOcean
 - Merchant Moe
 - Uniswap V3
 - Agni Finance
 
 **Lending (Lendle)**
+
 - Supply/Withdraw
 - Borrow/Repay
 - View positions
 
-**mETH**
+**mETH Staking**
+
 - View positions
 - Swap WETH <-> mETH
 
 **Oracles**
+
 - Pyth price feeds
 
 ## Setup
