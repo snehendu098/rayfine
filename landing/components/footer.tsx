@@ -11,7 +11,7 @@ export function Footer() {
     <footer id="install" className="relative">
       {/* Main CTA */}
       <motion.a
-        href="https://github.com/snehendu098/rayfine/tree/main/raycast"
+        href="https://github.com/snehendu098/rayfine/tree/main"
         target="_blank"
         rel="noopener noreferrer"
         data-cursor-hover
