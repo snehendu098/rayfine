@@ -1,0 +1,11 @@
+# Rayfine - Raycast Extension for Mantle Blockchain
+# https://rayfine.dev
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://rayfine.dev/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
