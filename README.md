@@ -17,27 +17,32 @@ rayfine/
 ## Features
 
 ### Wallet
+
 - Create/import wallets
 - View token balances
 - Send tokens
 - Sign messages
 
-### Trading (4 DEXs)
-- OpenOcean (aggregator)
+### Trading (4 DEXs + aggregators)
+
+- OpenOcean
 - Merchant Moe
 - Uniswap V3
 - Agni Finance
 
 ### Lending (Lendle)
+
 - Supply/withdraw collateral
 - Borrow/repay assets
 - View positions
 
 ### Staking (mETH)
+
 - Stake/unstake MNT
 - View staking position
 
 ### Oracles
+
 - Pyth price feeds
 
 ## Tech Stack
@@ -48,25 +53,25 @@ rayfine/
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `wallet` | Manage wallet |
-| `send` | Send tokens |
-| `token-balances` | View balances |
-| `sign-message` | Sign messages |
-| `openocean` | OpenOcean swap |
-| `merchantmoe` | Merchant Moe swap |
-| `uniswap-swap` | Uniswap swap |
-| `agni-swap` | Agni swap |
-| `lendle-supply` | Supply to Lendle |
-| `lendle-withdraw` | Withdraw from Lendle |
-| `lendle-borrow` | Borrow from Lendle |
-| `lendle-repay` | Repay Lendle loan |
+| Command            | Description           |
+| ------------------ | --------------------- |
+| `wallet`           | Manage wallet         |
+| `send`             | Send tokens           |
+| `token-balances`   | View balances         |
+| `sign-message`     | Sign messages         |
+| `openocean`        | OpenOcean swap        |
+| `merchantmoe`      | Merchant Moe swap     |
+| `uniswap-swap`     | Uniswap swap          |
+| `agni-swap`        | Agni swap             |
+| `lendle-supply`    | Supply to Lendle      |
+| `lendle-withdraw`  | Withdraw from Lendle  |
+| `lendle-borrow`    | Borrow from Lendle    |
+| `lendle-repay`     | Repay Lendle loan     |
 | `lendle-positions` | View Lendle positions |
-| `meth-swap-to` | Stake MNT → mETH |
-| `meth-swap-from` | Unstake mETH → MNT |
-| `meth-position` | View mETH position |
-| `pyth-price` | Get Pyth prices |
+| `meth-swap-to`     | Stake MNT → mETH      |
+| `meth-swap-from`   | Unstake mETH → MNT    |
+| `meth-position`    | View mETH position    |
+| `pyth-price`       | Get Pyth prices       |
 
 ## Networks
 
